@@ -1,0 +1,46 @@
+.setup-profile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+}
+
+.setup-profile-box {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  width: 500px;
+  max-width: 100%;
+}
+
+.setup-profile-box h2 {
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.setup-profile-box select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.setup-profile-box label {
+  display: block;
+  margin: 15px 0 5px;
+  font-weight: bold;
+}
+
+.skill-diagram-placeholder {
+  background-color: #e9ecef;
+  padding: 30px;
+  border-radius: 5px;
+  text-align: center;
+  margin: 20px 0;
+  color: #666;
+}
