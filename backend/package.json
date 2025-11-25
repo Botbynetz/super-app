@@ -21,7 +21,7 @@
     "test:payout": "jest tests/integration/payout_flow.test.js --runInBand --detectOpenHandles --forceExit",
     "test:gift": "jest tests/integration/gift_flow.test.js --runInBand --detectOpenHandles --forceExit",
     "test:middleware": "jest tests/unit/middleware/ --runInBand",
-    "test:concurrency": "node tests/concurrency/wallet_stress.test.js",
+    "test:concurrency": "jest tests/concurrency/ --runInBand --detectOpenHandles --forceExit --testTimeout=60000",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:middleware",
     "load-test": "artillery run load-tests/artillery-config.yml",
     "load-test:quick": "artillery quick --duration 30 --rate 10 https://superapp-backend-staging.onrender.com/api/health",
@@ -51,7 +51,9 @@
     "@sentry/profiling-node": "^1.3.0",
     "@pm2/io": "^5.0.2",
     "pm2": "^5.3.0",
-    "redis": "^4.6.0"
+    "redis": "^4.6.0",
+    "ioredis": "^5.3.2",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
