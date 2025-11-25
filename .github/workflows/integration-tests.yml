@@ -1,0 +1,183 @@
+name: Integration Tests - Phase 5 Monetization
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/integration-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        mongodb-version: ['6.0', '7.0']
+
+    services:
+      mongodb:
+        image: mongo:${{ matrix.mongodb-version }}
+        env:
+          MONGO_INITDB_DATABASE: super-app-test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v3
+
+    - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: 📦 Install dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: 🔍 Verify MongoDB connection
+      run: |
+        mongosh --eval "db.version()"
+        echo "MongoDB is ready!"
+
+    - name: 🧪 Run unlock flow tests
+      working-directory: ./backend
+      env:
+        NODE_ENV: test
+        MONGODB_URI_TEST: mongodb://localhost:27017/super-app-test
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-123' }}
+        TEST_PORT: 5001
+      run: npm test -- tests/integration/unlock_flow.test.js --verbose
+
+    - name: 🧪 Run subscription flow tests
+      working-directory: ./backend
+      env:
+        NODE_ENV: test
+        MONGODB_URI_TEST: mongodb://localhost:27017/super-app-test
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-123' }}
+        TEST_PORT: 5002
+      run: npm test -- tests/integration/subscription_flow.test.js --verbose
+
+    - name: 🧪 Run fraud detection tests
+      working-directory: ./backend
+      env:
+        NODE_ENV: test
+        MONGODB_URI_TEST: mongodb://localhost:27017/super-app-test
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-123' }}
+        TEST_PORT: 5003
+      run: npm test -- tests/integration/fraud_flow.test.js --verbose
+
+    - name: 🧪 Run Socket.IO event tests
+      working-directory: ./backend
+      env:
+        NODE_ENV: test
+        MONGODB_URI_TEST: mongodb://localhost:27017/super-app-test
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-123' }}
+        TEST_PORT: 5004
+      run: npm test -- tests/integration/socket_events.test.js --verbose
+
+    - name: 📊 Generate test coverage
+      working-directory: ./backend
+      env:
+        NODE_ENV: test
+        MONGODB_URI_TEST: mongodb://localhost:27017/super-app-test
+        JWT_SECRET: ${{ secrets.TEST_JWT_SECRET || 'test-secret-key-123' }}
+      run: npm run test:coverage -- tests/integration/
+
+    - name: 📤 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./backend/coverage/lcov.info
+        flags: integration-tests
+        name: integration-coverage-${{ matrix.node-version }}-mongodb-${{ matrix.mongodb-version }}
+
+    - name: 💾 Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.node-version }}-mongodb-${{ matrix.mongodb-version }}
+        path: |
+          backend/coverage/
+          backend/test-results/
+
+    - name: 📝 Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const testResults = `
+          ## 🧪 Integration Test Results
+          
+          **Node.js:** ${{ matrix.node-version }}
+          **MongoDB:** ${{ matrix.mongodb-version }}
+          **Status:** ✅ All tests passed!
+          
+          - ✅ Unlock Flow Tests
+          - ✅ Subscription Flow Tests  
+          - ✅ Fraud Detection Tests
+          - ✅ Socket.IO Event Tests
+          
+          See [full test logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: testResults
+          });
+
+  docker-integration-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v3
+
+    - name: 🐳 Build test Docker image
+      working-directory: ./backend
+      run: |
+        docker build -t super-app-test:latest \
+          --build-arg NODE_ENV=test \
+          -f Dockerfile.test .
+
+    - name: 🐳 Run integration tests in Docker Compose
+      run: |
+        docker-compose -f docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
+
+    - name: 🧹 Cleanup Docker resources
+      if: always()
+      run: |
+        docker-compose -f docker-compose.test.yml down -v
+
+  notify:
+    needs: [integration-tests, docker-integration-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: 📧 Send Slack notification
+      uses: 8398a7/action-slack@v3
+      if: env.SLACK_WEBHOOK_URL != ''
+      with:
+        status: ${{ job.status }}
+        text: |
+          Integration Tests ${{ job.status }}
+          Node: ${{ matrix.node-version }}
+          MongoDB: ${{ matrix.mongodb-version }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,220 @@
+.livestream-container {
+  padding: 20px;
+  background-color: #000;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.livestream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #222;
+}
+
+.livestream-header h1 {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.go-live-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.go-live-btn:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+.category-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.category-tab {
+  padding: 10px 20px;
+  border-radius: 20px;
+  background-color: #111;
+  color: #999;
+  border: 1px solid #222;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s;
+  font-weight: 600;
+}
+
+.category-tab:hover {
+  background-color: #222;
+}
+
+.category-tab.active {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.streams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.stream-card {
+  background-color: #111;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stream-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
+}
+
+.stream-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background-color: #222;
+}
+
+.stream-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.boost-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #f39c12;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.stream-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 5px 12px;
+  border-radius: 5px;
+  gap: 8px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #e74c3c;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.live-text {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.viewer-count {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.stream-info {
+  padding: 15px;
+}
+
+.stream-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 12px 0;
+  color: #fff;
+}
+
+.streamer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.streamer-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.streamer-name {
+  flex: 1;
+  font-size: 14px;
+  color: #fff;
+}
+
+.stream-category {
+  font-size: 12px;
+  color: #3498db;
+  font-weight: 600;
+}
+
+.no-streams {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-streams p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.start-streaming-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.start-streaming-btn:hover {
+  background-color: #2980b9;
+  transform: scale(1.05);
+}

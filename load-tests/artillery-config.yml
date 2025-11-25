@@ -1,0 +1,190 @@
+# ===================================
+# PHASE 6 - Artillery Load Test Config
+# Tests wallet, premium unlock, subscriptions, gifts
+# ===================================
+
+config:
+  target: "https://superapp-backend-staging.onrender.com"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Ramp-up phase
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp-up load"
+    
+    # Sustained load
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained high load"
+    
+    # Spike test
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike test"
+
+  # Variables
+  variables:
+    testUsername:
+      - "loadtest_user_{{$randomNumber}}"
+    testEmail:
+      - "loadtest{{$randomNumber}}@example.com"
+    testPassword:
+      - "Test123!@#"
+
+  # Plugins
+  plugins:
+    metrics-by-endpoint:
+      stripQueryString: true
+    
+  # Processor for custom logic
+  processor: "./load-test-processor.js"
+
+scenarios:
+  # ========== Scenario 1: Authentication ==========
+  - name: "User Registration and Login"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            username: "{{ testUsername }}"
+            email: "{{ testEmail }}"
+            password: "{{ testPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 2
+      
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ testEmail }}"
+            password: "{{ testPassword }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+  # ========== Scenario 2: Wallet Operations ==========
+  - name: "Wallet Transactions"
+    weight: 30
+    flow:
+      - function: "generateAuthToken"
+      
+      - get:
+          url: "/api/user/wallet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 1
+      
+      - post:
+          url: "/api/staging/faucet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 2
+      
+      - get:
+          url: "/api/user/wallet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # ========== Scenario 3: Premium Content Unlock ==========
+  - name: "Premium Content Unlock"
+    weight: 25
+    flow:
+      - function: "generateAuthToken"
+      
+      - get:
+          url: "/api/content/premium"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data[0]._id"
+              as: "contentId"
+      
+      - think: 1
+      
+      - post:
+          url: "/api/monetization/unlock"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            contentId: "{{ contentId }}"
+      
+      - think: 1
+      
+      - get:
+          url: "/api/user/unlocked-content"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # ========== Scenario 4: Subscription Purchase ==========
+  - name: "Subscription Flow"
+    weight: 15
+    flow:
+      - function: "generateAuthToken"
+      
+      - get:
+          url: "/api/user/creators"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data[0]._id"
+              as: "creatorId"
+      
+      - think: 2
+      
+      - post:
+          url: "/api/monetization/subscribe"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            creatorId: "{{ creatorId }}"
+            tier: "monthly"
+      
+      - think: 1
+      
+      - get:
+          url: "/api/user/subscriptions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # ========== Scenario 5: Gift Sending ==========
+  - name: "Send Gifts"
+    weight: 10
+    flow:
+      - function: "generateAuthToken"
+      
+      - get:
+          url: "/api/gift/types"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data[0].type"
+              as: "giftType"
+      
+      - think: 1
+      
+      - function: "getRandomCreator"
+      
+      - post:
+          url: "/api/gift/send"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            recipientId: "{{ recipientId }}"
+            giftType: "{{ giftType }}"
+            quantity: 1
+
+# ========== Expectations (Performance Targets) ==========
+expectations:
+  - p95: 500  # 95th percentile response time < 500ms
+  - p99: 1000 # 99th percentile response time < 1000ms
+  - maxErrorRate: 1 # Max 1% error rate

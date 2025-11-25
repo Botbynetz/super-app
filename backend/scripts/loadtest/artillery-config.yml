@@ -1,0 +1,299 @@
+# Artillery Load Test Configuration
+# 200 concurrent users testing various endpoints
+# Run: npm run test:concurrency
+
+config:
+  target: "{{ $processEnvironment.TEST_BASE_URL || 'http://localhost:5000' }}"
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Ramp-up phase
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp-up"
+    
+    # Peak load phase - 200 concurrent users
+    - duration: 300
+      arrivalRate: 50
+      name: "Peak load (200 concurrent)"
+    
+    # Cool-down phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool-down"
+  
+  processor: "./load-test-processor.js"
+  
+  variables:
+    contentPrice: 1000
+    giftAmount: 500
+  
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+scenarios:
+  # Scenario 1: User registration and authentication (10% weight)
+  - name: "Auth Flow"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/register"
+          beforeRequest: "generateUser"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            phoneNumber: "{{ phoneNumber }}"
+            password: "Test1234!"
+            role: "user"
+          capture:
+            json: "$.token"
+            as: "authToken"
+            json: "$.user._id"
+            as: "userId"
+          expect:
+            - statusCode: 201
+      
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "Test1234!"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Wallet operations (30% weight)
+  - name: "Wallet Operations"
+    weight: 30
+    flow:
+      # Register and login
+      - post:
+          url: "/api/auth/register"
+          beforeRequest: "generateUser"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            phoneNumber: "{{ phoneNumber }}"
+            password: "Test1234!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+            json: "$.user._id"
+            as: "userId"
+      
+      # Get wallet balance
+      - get:
+          url: "/api/wallet/balance"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+      
+      # Fund wallet via faucet
+      - post:
+          url: "/api/staging/faucet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: [200, 429] # May hit rate limit
+      
+      # Get transaction history
+      - get:
+          url: "/api/wallet/transactions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: Premium content unlock (35% weight)
+  - name: "Premium Unlock Flow"
+    weight: 35
+    flow:
+      # Register
+      - post:
+          url: "/api/auth/register"
+          beforeRequest: "generateUser"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            phoneNumber: "{{ phoneNumber }}"
+            password: "Test1234!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+            json: "$.user._id"
+            as: "userId"
+      
+      # Fund wallet
+      - post:
+          url: "/api/staging/faucet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      # List premium content
+      - get:
+          url: "/api/premium/list"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            json: "$[0]._id"
+            as: "contentId"
+          expect:
+            - statusCode: 200
+      
+      # Unlock content with idempotency
+      - post:
+          url: "/api/premium/unlock"
+          beforeRequest: "generateIdempotencyKey"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            Idempotency-Key: "{{ idempotencyKey }}"
+          json:
+            contentId: "{{ contentId }}"
+          expect:
+            - statusCode: [200, 400, 409] # Success, already unlocked, or in progress
+      
+      # Verify unlock
+      - get:
+          url: "/api/premium/my-unlocks"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 4: Subscription flow (15% weight)
+  - name: "Subscription Flow"
+    weight: 15
+    flow:
+      # Register user
+      - post:
+          url: "/api/auth/register"
+          beforeRequest: "generateUser"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            phoneNumber: "{{ phoneNumber }}"
+            password: "Test1234!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+            json: "$.user._id"
+            as: "userId"
+      
+      # Fund wallet
+      - post:
+          url: "/api/staging/faucet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      # Get creator list
+      - get:
+          url: "/api/user/creators"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            json: "$[0]._id"
+            as: "creatorId"
+          expect:
+            - statusCode: 200
+      
+      # Subscribe to creator
+      - post:
+          url: "/api/subscription/subscribe"
+          beforeRequest: "generateIdempotencyKey"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            Idempotency-Key: "{{ idempotencyKey }}"
+          json:
+            creatorId: "{{ creatorId }}"
+            tier: "monthly"
+          expect:
+            - statusCode: [200, 400] # Success or already subscribed
+      
+      # Check subscriptions
+      - get:
+          url: "/api/subscription/my-subscriptions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+
+  # Scenario 5: Gift sending (10% weight)
+  - name: "Gift Flow"
+    weight: 10
+    flow:
+      # Register sender
+      - post:
+          url: "/api/auth/register"
+          beforeRequest: "generateUser"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            phoneNumber: "{{ phoneNumber }}"
+            password: "Test1234!"
+          capture:
+            json: "$.token"
+            as: "authToken"
+            json: "$.user._id"
+            as: "userId"
+      
+      # Fund wallet
+      - post:
+          url: "/api/staging/faucet"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      # Get creators for gifting
+      - get:
+          url: "/api/user/creators"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            json: "$[0]._id"
+            as: "recipientId"
+          expect:
+            - statusCode: 200
+      
+      # Get available gift types
+      - get:
+          url: "/api/gamification/gifts"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            json: "$[0].id"
+            as: "giftType"
+          expect:
+            - statusCode: 200
+      
+      # Send gift
+      - post:
+          url: "/api/gamification/send-gift"
+          beforeRequest: "generateIdempotencyKey"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            Idempotency-Key: "{{ idempotencyKey }}"
+          json:
+            recipientId: "{{ recipientId }}"
+            giftType: "{{ giftType }}"
+            message: "Load test gift"
+          expect:
+            - statusCode: [200, 400] # Success or insufficient balance
+
+# Performance expectations
+expect:
+  - statusCode: [200, 201, 400, 409, 429]
+  - contentType: json
+  - maxResponseTime: 1000 # p95 should be under 1000ms
+
+# Reporting
+reporting:
+  - type: "console"
+    format: "detailed"

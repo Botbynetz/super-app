@@ -1,0 +1,280 @@
+.watch-stream-container {
+  display: flex;
+  height: 100vh;
+  background-color: #000;
+  color: #fff;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #fff;
+  font-size: 20px;
+}
+
+.video-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.video-player {
+  flex: 1;
+  background-color: #111;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-placeholder {
+  text-align: center;
+}
+
+.video-placeholder h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.video-placeholder p {
+  color: #666;
+  font-size: 14px;
+}
+
+.stream-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 15px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #e74c3c;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.viewer-badge {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 15px;
+  border-radius: 5px;
+}
+
+.stream-info-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+}
+
+.stream-info-overlay h2 {
+  font-size: 24px;
+  margin: 0 0 5px 0;
+}
+
+.stream-info-overlay p {
+  color: #999;
+  margin: 0;
+}
+
+.action-buttons {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.action-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  background-color: rgba(0, 0, 0, 0.9);
+}
+
+.chat-section {
+  width: 350px;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #222;
+}
+
+.chat-header {
+  padding: 20px;
+  border-bottom: 1px solid #222;
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-message {
+  background-color: #111;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.chat-message .username {
+  color: #3498db;
+  margin-right: 5px;
+}
+
+.gift-message {
+  background-color: #1a1a1a;
+  border-left: 3px solid #f39c12;
+}
+
+.gift-text {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+.chat-input {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #222;
+  gap: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  background-color: #111;
+  border: 1px solid #222;
+  color: #fff;
+  padding: 12px 15px;
+  border-radius: 20px;
+  outline: none;
+}
+
+.chat-input button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.chat-input button:hover {
+  background-color: #2980b9;
+}
+
+.gift-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.gift-modal-content {
+  background-color: #111;
+  padding: 30px;
+  border-radius: 15px;
+  min-width: 400px;
+}
+
+.gift-modal-content h3 {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+}
+
+.gifts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.gift-item {
+  background-color: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.gift-item:hover {
+  background-color: #333;
+  transform: scale(1.05);
+}
+
+.gift-emoji {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.gift-value {
+  color: #f39c12;
+  font-weight: bold;
+}
+
+.close-btn {
+  width: 100%;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.close-btn:hover {
+  background-color: #c0392b;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

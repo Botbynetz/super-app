@@ -1,0 +1,490 @@
+### Phase 3 Testing - REST Client File
+### Use VSCode REST Client extension to run these tests
+
+@baseUrl = http://localhost:5000/api
+@token = YOUR_TOKEN_HERE
+
+### ====================
+### STEP 0: Authentication
+### ====================
+
+### 1. Send OTP
+POST {{baseUrl}}/auth/send-otp
+Content-Type: application/json
+
+{
+  "phoneNumber": "+6281234567890"
+}
+
+### 2. Verify OTP (check server logs for OTP code)
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "phoneNumber": "+6281234567890",
+  "otp": "123456",
+  "autoLogin": true
+}
+
+### Copy token from response and paste above in @token variable
+
+### 3. Get Profile (to get userId)
+GET {{baseUrl}}/user/profile
+Authorization: Bearer {{token}}
+
+
+### ====================
+### STEP 1: Seed Data
+### ====================
+
+### Seed Product Templates
+POST {{baseUrl}}/ai/seed-product-templates
+Authorization: Bearer {{token}}
+
+### Seed CV Templates
+POST {{baseUrl}}/ai/seed-cv-templates
+Authorization: Bearer {{token}}
+
+### Seed Badges
+POST {{baseUrl}}/gamification/seed-badges
+Authorization: Bearer {{token}}
+
+
+### ====================
+### STEP 2: Financial Assistant
+### ====================
+
+### Add some XP (creates transactions)
+POST {{baseUrl}}/gamification/add-exp
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 100,
+  "reason": "Testing financial assistant"
+}
+
+### Generate Financial Report
+POST {{baseUrl}}/ai/financial-assistant
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "YOUR_USER_ID",
+  "month": 11,
+  "year": 2025
+}
+
+### Get Financial Report
+GET {{baseUrl}}/ai/financial-report/YOUR_USER_ID?month=11&year=2025
+Authorization: Bearer {{token}}
+
+### Set Financial Targets
+POST {{baseUrl}}/ai/financial-targets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "YOUR_USER_ID",
+  "month": 12,
+  "year": 2025,
+  "incomeTarget": 5000,
+  "expenseLimit": 2000
+}
+
+
+### ====================
+### STEP 3: Product Generator
+### ====================
+
+### Generate Product Description - Electronics
+POST {{baseUrl}}/ai/product-description
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productName": "Smart Watch Pro X",
+  "category": "electronics",
+  "inputs": {
+    "adjective": "canggih",
+    "benefit": "meningkatkan produktivitas",
+    "feature1": "GPS tracking",
+    "feature2": "heart rate monitor",
+    "advantage": "tahan air 50m",
+    "targetAudience": "atlet dan profesional"
+  }
+}
+
+### Generate Product Description - Fashion
+POST {{baseUrl}}/ai/product-description
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productName": "Kaos Premium Cotton",
+  "category": "fashion",
+  "inputs": {
+    "adjective": "nyaman",
+    "material": "100% cotton",
+    "quality": "premium",
+    "targetAudience": "semua kalangan"
+  }
+}
+
+### Generate Product Description - Food
+POST {{baseUrl}}/ai/product-description
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productName": "Kopi Arabica Premium",
+  "category": "food",
+  "inputs": {
+    "adjective": "nikmat",
+    "benefit": "meningkatkan fokus",
+    "feature1": "100% Arabica beans",
+    "origin": "Aceh Gayo",
+    "targetAudience": "pecinta kopi"
+  }
+}
+
+### Get All Product Descriptions
+GET {{baseUrl}}/ai/product-descriptions
+Authorization: Bearer {{token}}
+
+
+### ====================
+### STEP 4: Chatbot Builder
+### ====================
+
+### Create Chatbot
+POST {{baseUrl}}/ai/chatbot-generator
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Customer Support Bot",
+  "description": "Handles customer inquiries 24/7",
+  "flows": [
+    {
+      "trigger": "hello",
+      "triggerType": "contains",
+      "response": "Hi! Welcome to our service. How can I help you today?"
+    },
+    {
+      "trigger": "jam operasional",
+      "triggerType": "contains",
+      "response": "Kami buka Senin-Jumat, 09:00-17:00 WIB. Weekend off ya!"
+    },
+    {
+      "trigger": "^price$",
+      "triggerType": "regex",
+      "response": "Our prices start from Rp 100,000. Check our website for details!"
+    },
+    {
+      "trigger": "thanks",
+      "triggerType": "startsWith",
+      "response": "You're welcome! Happy to help! 😊"
+    },
+    {
+      "trigger": "help",
+      "triggerType": "exact",
+      "response": "Available commands:\n- hello: Greeting\n- jam operasional: Business hours\n- price: Pricing info\n- thanks: Thank you"
+    }
+  ],
+  "defaultResponse": "Maaf, saya tidak mengerti. Ketik 'help' untuk melihat perintah yang tersedia.",
+  "deploymentType": "public"
+}
+
+### Get All Chatbots
+GET {{baseUrl}}/ai/chatbots
+Authorization: Bearer {{token}}
+
+### Test Chatbot - Contains match
+POST {{baseUrl}}/ai/chatbot/CHATBOT_ID/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "Hi hello there"
+}
+
+### Test Chatbot - Exact match
+POST {{baseUrl}}/ai/chatbot/CHATBOT_ID/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "help"
+}
+
+### Test Chatbot - Regex match
+POST {{baseUrl}}/ai/chatbot/CHATBOT_ID/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "price"
+}
+
+### Test Chatbot - StartsWith match
+POST {{baseUrl}}/ai/chatbot/CHATBOT_ID/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "thanks a lot for your help"
+}
+
+### Test Chatbot - Default response
+POST {{baseUrl}}/ai/chatbot/CHATBOT_ID/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "message": "xyzabc random text"
+}
+
+### Get Chatbot Stats
+GET {{baseUrl}}/ai/chatbot/CHATBOT_ID/stats
+Authorization: Bearer {{token}}
+
+### Update Chatbot
+PUT {{baseUrl}}/ai/chatbot/CHATBOT_ID
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Updated Support Bot Pro",
+  "isActive": true
+}
+
+
+### ====================
+### STEP 5: CV Generator
+### ====================
+
+### Get Available Badges
+GET {{baseUrl}}/gamification/badges
+Authorization: Bearer {{token}}
+
+### Auto-check and Award Badges
+POST {{baseUrl}}/gamification/check-badges/YOUR_USER_ID
+Authorization: Bearer {{token}}
+
+### Generate CV
+POST {{baseUrl}}/ai/generate-cv
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "TEMPLATE_ID_FROM_SEED",
+  "data": {
+    "fullName": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+6281234567890",
+    "summary": "Experienced Full Stack Developer with 5+ years of expertise in building scalable web applications. Passionate about clean code and user experience.",
+    "skills": ["JavaScript", "React", "Node.js", "MongoDB", "Python", "Docker", "AWS", "Git"],
+    "experience": [
+      {
+        "title": "Senior Full Stack Developer",
+        "company": "Tech Corp Indonesia",
+        "duration": "2020 - Present",
+        "description": "Led development of microservices architecture serving 1M+ users"
+      },
+      {
+        "title": "Frontend Developer",
+        "company": "Startup Inc",
+        "duration": "2018 - 2020",
+        "description": "Built responsive web applications using React and Vue.js"
+      }
+    ],
+    "education": [
+      {
+        "degree": "Bachelor of Computer Science",
+        "institution": "University of Indonesia",
+        "year": "2018"
+      }
+    ]
+  }
+}
+
+### Get All My CVs
+GET {{baseUrl}}/ai/cvs
+Authorization: Bearer {{token}}
+
+### Calculate Freelancer Score
+POST {{baseUrl}}/ai/calculate-freelancer-score
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "YOUR_USER_ID"
+}
+
+### Get Freelancer Rankings (Top 10)
+GET {{baseUrl}}/ai/freelancer-rankings?limit=10
+Authorization: Bearer {{token}}
+
+### Get Rankings by Skill
+GET {{baseUrl}}/ai/freelancer-rankings?skill=JavaScript&limit=5
+Authorization: Bearer {{token}}
+
+
+### ====================
+### STEP 6: Smart Recommendations
+### ====================
+
+### Update User Preferences
+POST {{baseUrl}}/ai/update-preferences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "interests": ["programming", "web development", "design", "photography", "music production"],
+  "preferredEventTypes": ["workshop", "webinar", "meetup", "conference"],
+  "preferredContentTypes": ["tutorial", "inspiration", "news", "behind the scenes"],
+  "preferredStreamCategories": ["coding", "design", "gaming", "music"]
+}
+
+### Create Sample Event 1
+POST {{baseUrl}}/event/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Web Development Workshop: React & Node.js",
+  "description": "Learn modern web development with React and Node.js programming. Hands-on coding session for beginners and intermediate developers.",
+  "date": "2025-12-01T10:00:00Z",
+  "category": "workshop"
+}
+
+### Create Sample Event 2
+POST {{baseUrl}}/event/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Photography Meetup Jakarta",
+  "description": "Photography enthusiasts gathering for photo sharing session and outdoor shooting practice.",
+  "date": "2025-12-05T14:00:00Z",
+  "category": "meetup"
+}
+
+### Create Sample Event 3
+POST {{baseUrl}}/event/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "UI/UX Design Webinar",
+  "description": "Learn latest design trends and tools. Discussion about user-centered design principles.",
+  "date": "2025-11-28T19:00:00Z",
+  "category": "webinar"
+}
+
+### Get Event Recommendations
+GET {{baseUrl}}/ai/recommend/events?limit=10
+Authorization: Bearer {{token}}
+
+### Get Content Recommendations
+GET {{baseUrl}}/ai/recommend/content?limit=10
+Authorization: Bearer {{token}}
+
+### Get Stream Recommendations
+GET {{baseUrl}}/ai/recommend/streams?limit=10
+Authorization: Bearer {{token}}
+
+### Get User Recommendations
+GET {{baseUrl}}/ai/recommend/users?limit=10
+Authorization: Bearer {{token}}
+
+### Track Interaction - View Event
+POST {{baseUrl}}/ai/track-interaction
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "itemId": "EVENT_ID",
+  "itemType": "event",
+  "action": "view"
+}
+
+### Track Interaction - Join Event
+POST {{baseUrl}}/ai/track-interaction
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "itemId": "EVENT_ID",
+  "itemType": "event",
+  "action": "join"
+}
+
+
+### ====================
+### Bonus: User Progress & Gamification
+### ====================
+
+### Get User Progress
+GET {{baseUrl}}/gamification/progress/YOUR_USER_ID
+Authorization: Bearer {{token}}
+
+### Get Leaderboard
+GET {{baseUrl}}/gamification/leaderboard?type=level&limit=50
+Authorization: Bearer {{token}}
+
+### Get Transactions
+GET {{baseUrl}}/gamification/transactions/YOUR_USER_ID?page=1&limit=20
+Authorization: Bearer {{token}}
+
+
+### ====================
+### VERIFICATION TESTS
+### ====================
+
+### Test Product Generator Multiple Times (should vary)
+POST {{baseUrl}}/ai/product-description
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productName": "Laptop Gaming RGB",
+  "category": "electronics",
+  "inputs": {
+    "adjective": "powerful",
+    "benefit": "gaming performance",
+    "feature1": "RTX 4090",
+    "feature2": "32GB RAM"
+  }
+}
+
+### Run 3-5 times and compare results - synonyms should create variations
+
+### Test Financial Report Growth Rate (need previous month data)
+POST {{baseUrl}}/ai/financial-assistant
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "YOUR_USER_ID",
+  "month": 10,
+  "year": 2025
+}
+
+### Then generate for current month to see growth rate
+POST {{baseUrl}}/ai/financial-assistant
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "YOUR_USER_ID",
+  "month": 11,
+  "year": 2025
+}
+
+### Test Recommendation Scoring (check factors breakdown)
+GET {{baseUrl}}/ai/recommend/events?limit=5
+Authorization: Bearer {{token}}
+
+### Should return events with score and 6 factors breakdown

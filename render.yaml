@@ -1,0 +1,104 @@
+# ===================================
+# Render.com Deployment Configuration
+# PHASE 6 - Staging Environment
+# ===================================
+
+services:
+  # ========== Backend API + Socket.io ==========
+  - type: web
+    name: superapp-backend-staging
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    
+    # Scaling configuration
+    plan: starter
+    region: oregon
+    
+    # Build settings
+    branch: staging
+    buildCommand: echo "Building with Docker..."
+    
+    # Auto-deploy
+    autoDeploy: true
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 5000
+      
+      - key: DATABASE_URI
+        sync: false
+        # Set manually in Render dashboard with MongoDB Atlas connection string
+      
+      - key: JWT_SECRET
+        generateValue: true
+        # Auto-generated secure secret
+      
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      
+      - key: SOCKET_CORS_ORIGIN
+        value: https://superapp-web-staging.onrender.com,http://localhost:3000
+      
+      - key: ENABLE_SOCKET_IO
+        value: true
+      
+      - key: SENTRY_DSN
+        sync: false
+        # Set manually with Sentry project DSN
+      
+      - key: SENTRY_ENVIRONMENT
+        value: staging
+      
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+        # Set manually with BotFather token
+      
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+        # Set manually with your Telegram user ID
+      
+      - key: IS_STAGING
+        value: true
+      
+      - key: DISABLE_REAL_PAYOUTS
+        value: true
+      
+      - key: ENABLE_COIN_FAUCET
+        value: true
+      
+      - key: PM2_INSTANCES
+        value: 2
+      
+      - key: LOG_LEVEL
+        value: debug
+    
+    # Health check endpoint
+    healthCheckPath: /api/health
+    
+    # Scaling policies
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 80
+      targetCPUPercent: 70
+
+# ========== Database (MongoDB Atlas - External) ==========
+# MongoDB is hosted on MongoDB Atlas with replica set
+# Connection string should be added to DATABASE_URI env var
+# Required configuration:
+#   - Replica Set enabled (for transactions)
+#   - Staging database name: superapp_staging
+#   - IP whitelist: 0.0.0.0/0 (or Render IP ranges)
+
+# ========== Redis (Optional - for caching) ==========
+# Uncomment if adding Redis for session management
+# - type: redis
+#   name: superapp-redis-staging
+#   plan: starter
+#   maxmemoryPolicy: allkeys-lru
+#   ipAllowList: []

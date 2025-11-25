@@ -1,0 +1,538 @@
+{
+  "info": {
+    "name": "Phase 5 Monetization API - Integration Tests",
+    "description": "Complete Postman collection for testing Phase 5 monetization features including premium content unlock, subscriptions, revenue management, and fraud detection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "buyer_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "creator_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "content_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subscription_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Authentication",
+      "item": [
+        {
+          "name": "Register Buyer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('buyer_id', pm.response.json().user._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testbuyer\",\n  \"email\": \"testbuyer@test.com\",\n  \"password\": \"Test123!@#\",\n  \"fullName\": \"Test Buyer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Buyer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('auth_token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testbuyer\",\n  \"password\": \"Test123!@#\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register Creator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('creator_id', pm.response.json().user._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testcreator\",\n  \"email\": \"testcreator@test.com\",\n  \"password\": \"Test123!@#\",\n  \"fullName\": \"Test Creator\",\n  \"role\": \"creator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Wallet Operations",
+      "item": [
+        {
+          "name": "Get Wallet Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/wallet/balance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wallet", "balance"]
+            }
+          }
+        },
+        {
+          "name": "Deposit Coins (Test)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_coins\": 10000,\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/wallet/deposit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "wallet", "deposit"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Premium Content",
+      "item": [
+        {
+          "name": "Create Premium Content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('content_id', pm.response.json().content._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Premium Content\",\n  \"description\": \"This is test premium content for integration testing\",\n  \"price_coins\": 500,\n  \"category\": \"education\",\n  \"mediaType\": \"video\",\n  \"fullMediaUrl\": \"https://cdn.test.com/video.mp4\",\n  \"previewMediaUrl\": \"https://cdn.test.com/preview.mp4\",\n  \"tags\": [\"test\", \"premium\", \"video\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/premium/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "create"]
+            }
+          }
+        },
+        {
+          "name": "Publish Content",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/premium/{{content_id}}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "{{content_id}}", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Browse Premium Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/premium/browse?category=education&sort=recent&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "browse"],
+              "query": [
+                {"key": "category", "value": "education"},
+                {"key": "sort", "value": "recent"},
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "20"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Content Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/premium/{{content_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "{{content_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Unlock Premium Content",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/premium/{{content_id}}/unlock",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "{{content_id}}", "unlock"]
+            }
+          }
+        },
+        {
+          "name": "Get Preview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/premium/{{content_id}}/preview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "premium", "{{content_id}}", "preview"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Subscriptions",
+      "item": [
+        {
+          "name": "Subscribe to Creator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('subscription_id', pm.response.json().subscription._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"creatorId\": \"{{creator_id}}\",\n  \"tierId\": \"monthly\",\n  \"idempotencyKey\": \"{{$guid}}\",\n  \"autoRenew\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/subscribe",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscription", "subscribe"]
+            }
+          }
+        },
+        {
+          "name": "Get My Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/my-subscriptions?status=active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscription", "my-subscriptions"],
+              "query": [{"key": "status", "value": "active"}]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Testing cancellation flow\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/{{subscription_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscription", "{{subscription_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Renew Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/subscription/{{subscription_id}}/renew",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscription", "{{subscription_id}}", "renew"]
+            }
+          }
+        },
+        {
+          "name": "Get Creator Subscribers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/subscription/creator/{{creator_id}}/subscribers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "subscription", "creator", "{{creator_id}}", "subscribers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Creator Revenue",
+      "item": [
+        {
+          "name": "Get Revenue Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/creator/revenue/revenue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "creator", "revenue", "revenue"]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/creator/revenue/revenue/history?startDate=2025-01-01&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "creator", "revenue", "revenue", "history"],
+              "query": [
+                {"key": "startDate", "value": "2025-01-01"},
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "50"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Revenue Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/creator/revenue/revenue/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "creator", "revenue", "revenue", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Request Withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount_coins\": 1000,\n  \"bankDetails\": {\n    \"accountNumber\": \"1234567890\",\n    \"bankName\": \"BCA\",\n    \"accountName\": \"Test Creator\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/creator/revenue/revenue/withdraw",
+              "host": ["{{base_url}}"],
+              "path": ["api", "creator", "revenue", "revenue", "withdraw"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Fraud Detection (Admin)",
+      "item": [
+        {
+          "name": "Get User Risk Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/fraud/risk-profile/{{buyer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "fraud", "risk-profile", "{{buyer_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Freeze Account",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{buyer_id}}\",\n  \"reason\": \"Suspicious activity detected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/freeze-account",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "freeze-account"]
+            }
+          }
+        },
+        {
+          "name": "Unfreeze Account",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{buyer_id}}\",\n  \"reason\": \"Review completed - no fraud detected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/unfreeze-account",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "unfreeze-account"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

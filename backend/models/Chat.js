@@ -7,11 +7,23 @@ const chatSchema = new mongoose.Schema({
     required: true
   },
   participants: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    unreadCount: {
+      type: Number,
+      default: 0
+    },
+    lastSeen: Date
   }],
   groupName: {
     type: String
+  },
+  lastMessage: {
+    text: String,
+    senderId: mongoose.Schema.Types.ObjectId,
+    timestamp: Date
   },
   createdAt: {
     type: Date,

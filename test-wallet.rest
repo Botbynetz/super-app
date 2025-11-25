@@ -1,0 +1,431 @@
+### Phase 4.1 - Wallet Core API Testing
+### Use VS Code REST Client extension to test these endpoints
+
+### Variables
+@baseUrl = http://localhost:5000
+@token = 
+@userId = 
+@depositId = 
+@withdrawId = 
+
+### =====================================================
+### STEP 1: Authentication
+### =====================================================
+
+### 1.1 Register User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "Test123!@#",
+  "phoneNumber": "+6281234567890"
+}
+
+### 1.2 Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Test123!@#"
+}
+
+# Copy the token from response and paste above in @token variable
+
+### =====================================================
+### STEP 2: Wallet Balance
+### =====================================================
+
+### 2.1 Get Own Balance
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### 2.2 Get Specific User Balance (requires userId)
+GET {{baseUrl}}/api/wallet/balance/{{userId}}
+Authorization: Bearer {{token}}
+
+### =====================================================
+### STEP 3: Deposit Flow
+### =====================================================
+
+### 3.1 Initialize Deposit (100,000 cents = Rp 1,000 = 10 coins)
+POST {{baseUrl}}/api/wallet/deposit/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 100000,
+  "provider": "midtrans"
+}
+
+# Copy depositId from response and paste above in @depositId
+
+### 3.2 Confirm Deposit (Simulated Webhook)
+POST {{baseUrl}}/api/wallet/deposit/confirm
+Content-Type: application/json
+
+{
+  "depositId": "{{depositId}}",
+  "providerTxId": "midtrans_test_123456",
+  "status": "success",
+  "transaction_status": "settlement",
+  "payment_type": "bank_transfer"
+}
+
+### 3.3 Test Idempotency - Run Same Confirm Again (should return alreadyProcessed: true)
+POST {{baseUrl}}/api/wallet/deposit/confirm
+Content-Type: application/json
+
+{
+  "depositId": "{{depositId}}",
+  "providerTxId": "midtrans_test_123456",
+  "status": "success"
+}
+
+### 3.4 Check Balance After Deposit
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### =====================================================
+### STEP 4: Transfer Flow
+### =====================================================
+
+### 4.1 Register Second User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "receiver",
+  "email": "receiver@example.com",
+  "password": "Receiver123!@#",
+  "phoneNumber": "+6281234567891"
+}
+
+# Copy the userId from response and paste above in @userId
+
+### 4.2 Transfer Coins (50,000 cents = Rp 500 = 5 coins)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 50000,
+  "idempotencyKey": "transfer_test_001",
+  "note": "Test transfer - gift"
+}
+
+### 4.3 Test Transfer Idempotency (same idempotencyKey)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 50000,
+  "idempotencyKey": "transfer_test_001",
+  "note": "Test transfer - gift"
+}
+
+### 4.4 Check Balance After Transfer
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### 4.5 Test Insufficient Balance (should fail)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 99999999,
+  "idempotencyKey": "transfer_test_002",
+  "note": "Should fail - insufficient balance"
+}
+
+### 4.6 Test Transfer to Self (should fail)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{token}}",
+  "amount": 10000,
+  "idempotencyKey": "transfer_test_003"
+}
+
+### =====================================================
+### STEP 5: Withdrawal Flow
+### =====================================================
+
+### 5.1 Initialize Withdrawal (minimum 100,000 cents = Rp 1,000)
+POST {{baseUrl}}/api/wallet/withdraw/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 100000,
+  "bankDetails": {
+    "bankName": "BCA",
+    "accountNumber": "1234567890",
+    "accountName": "Test User"
+  },
+  "provider": "manual"
+}
+
+# Copy withdrawId from response and paste above in @withdrawId
+
+### 5.2 Confirm Withdrawal (Admin Action - requires admin token)
+# First, login as admin or change user role to admin in DB
+POST {{baseUrl}}/api/wallet/withdraw/confirm
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "withdrawId": "{{withdrawId}}",
+  "status": "completed",
+  "providerTxId": "bank_transfer_test_123",
+  "reason": "Manual withdrawal processed"
+}
+
+### 5.3 Check Balance After Withdrawal
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### 5.4 Test Withdrawal Below Minimum (should fail)
+POST {{baseUrl}}/api/wallet/withdraw/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 50000,
+  "bankDetails": {
+    "bankName": "BCA",
+    "accountNumber": "1234567890",
+    "accountName": "Test User"
+  }
+}
+
+### =====================================================
+### STEP 6: Transaction History
+### =====================================================
+
+### 6.1 Get All History (paginated)
+GET {{baseUrl}}/api/wallet/history?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### 6.2 Get Deposit History Only
+GET {{baseUrl}}/api/wallet/history?type=deposit&status=completed
+Authorization: Bearer {{token}}
+
+### 6.3 Get Transfer History
+GET {{baseUrl}}/api/wallet/history?type=transfer_out
+Authorization: Bearer {{token}}
+
+### 6.4 Get Specific User History (admin or self)
+GET {{baseUrl}}/api/wallet/history/{{userId}}?page=1&limit=10
+Authorization: Bearer {{token}}
+
+### =====================================================
+### STEP 7: Admin Operations
+### =====================================================
+
+### 7.1 Freeze Wallet (Admin Only)
+POST {{baseUrl}}/api/wallet/freeze/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Suspicious activity detected - fraud prevention"
+}
+
+### 7.2 Try Transaction on Frozen Wallet (should fail)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 10000,
+  "idempotencyKey": "transfer_test_frozen"
+}
+
+### 7.3 Unfreeze Wallet (Admin Only)
+POST {{baseUrl}}/api/wallet/unfreeze/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "Investigation complete - account cleared"
+}
+
+### 7.4 Get Audit Trail (Admin Only)
+GET {{baseUrl}}/api/wallet/audit/{{depositId}}
+Authorization: Bearer {{token}}
+
+### =====================================================
+### STEP 8: Rate Limit Testing
+### =====================================================
+
+### 8.1 Spam Transfers (10+ in 1 minute - should be rate limited)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 1000,
+  "idempotencyKey": "spam_test_1"
+}
+
+### Run this request 10+ times rapidly to hit rate limit
+
+### 8.2 Spam Withdrawals (3+ in 1 minute - should be rate limited)
+POST {{baseUrl}}/api/wallet/withdraw/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 100000,
+  "bankDetails": {
+    "bankName": "BCA",
+    "accountNumber": "1234567890",
+    "accountName": "Test User"
+  }
+}
+
+### =====================================================
+### STEP 9: Edge Cases
+### =====================================================
+
+### 9.1 Negative Amount (should fail validation)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": -50000,
+  "idempotencyKey": "negative_test"
+}
+
+### 9.2 Zero Amount (should fail validation)
+POST {{baseUrl}}/api/wallet/deposit/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 0
+}
+
+### 9.3 Non-Integer Amount (should fail validation)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "{{userId}}",
+  "amount": 50000.5,
+  "idempotencyKey": "float_test"
+}
+
+### 9.4 Missing Bank Details (should fail validation)
+POST {{baseUrl}}/api/wallet/withdraw/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 100000
+}
+
+### 9.5 Invalid User ID (should fail)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "toUserId": "nonexistent_user_id",
+  "amount": 10000,
+  "idempotencyKey": "invalid_user_test"
+}
+
+### =====================================================
+### STEP 10: Currency Conversion Check
+### =====================================================
+
+### 10.1 Deposit 10,000 cents (= Rp 100 = 1 coin)
+POST {{baseUrl}}/api/wallet/deposit/init
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 10000,
+  "provider": "midtrans"
+}
+
+### 10.2 Confirm and Check Conversions
+# After confirming above deposit, check balance response:
+# - balance_cents should increase by 10000
+# - balance_rupiah should increase by 100 (10000/100)
+# - balance_coins should increase by 1 (10000/10000)
+
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### =====================================================
+### Testing Checklist
+### =====================================================
+
+# ✅ Authentication (register, login)
+# ✅ Get balance
+# ✅ Initialize deposit
+# ✅ Confirm deposit (webhook)
+# ✅ Deposit idempotency
+# ✅ Transfer coins
+# ✅ Transfer idempotency
+# ✅ Insufficient balance check
+# ✅ Self-transfer prevention
+# ✅ Initialize withdrawal
+# ✅ Confirm withdrawal (admin)
+# ✅ Minimum withdrawal check
+# ✅ Transaction history (all types)
+# ✅ Freeze wallet (admin)
+# ✅ Unfreeze wallet (admin)
+# ✅ Frozen wallet transaction prevention
+# ✅ Audit trail
+# ✅ Rate limiting (transfers, withdrawals)
+# ✅ Input validation (negative, zero, float, missing)
+# ✅ Currency conversions (cents/rupiah/coins)
+
+### =====================================================
+### Expected Results Summary
+### =====================================================
+
+# 1. Deposit Flow:
+#    - init: Creates pending transaction
+#    - confirm: Credits wallet atomically
+#    - idempotency: Same providerTxId returns existing result
+
+# 2. Transfer Flow:
+#    - Creates two transactions (sender transfer_out, receiver transfer_in)
+#    - Updates both wallets atomically
+#    - idempotency: Same idempotencyKey returns existing result
+#    - Validates: balance, status, self-transfer
+
+# 3. Withdrawal Flow:
+#    - init: Creates pending withdrawal
+#    - confirm: Deducts wallet (admin only)
+#    - Validates: minimum amount, bank details
+
+# 4. Security:
+#    - Rate limits enforced
+#    - Input validation catches all edge cases
+#    - Frozen wallets cannot transact
+#    - Audit logs track all operations
+
+# 5. Consistency:
+#    - All operations use MongoDB transactions
+#    - Balance never goes negative
+#    - Optimistic locking prevents race conditions
