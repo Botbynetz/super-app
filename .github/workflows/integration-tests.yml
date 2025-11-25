@@ -45,11 +45,6 @@ jobs:
       working-directory: ./backend
       run: npm ci
 
-    - name: 🔍 Verify MongoDB connection
-      run: |
-        mongosh --eval "db.version()"
-        echo "MongoDB is ready!"
-
     - name: 🧪 Run unlock flow tests
       working-directory: ./backend
       env:
